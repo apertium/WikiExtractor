@@ -8,14 +8,14 @@
 # =============================================================================
 #  Version: 2.5 (May 9, 2013)
 #  Author: Giuseppe Attardi (attardi@di.unipi.it), University of Pisa
-#	   Antonio Fuschetto (fuschett@di.unipi.it), University of Pisa
+#      Antonio Fuschetto (fuschett@di.unipi.it), University of Pisa
 #
 #  Contributors:
-#	Leonardo Souza (lsouza@amtera.com.br)
-#	Juan Manuel Caicedo (juan@cavorite.com)
-#	Humberto Pereira (begini@gmail.com)
-#	Siegfried-A. Gevatter (siegfried@gevatter.com)
-#	Pedro Assis (pedroh2306@gmail.com)
+#   Leonardo Souza (lsouza@amtera.com.br)
+#   Juan Manuel Caicedo (juan@cavorite.com)
+#   Humberto Pereira (begini@gmail.com)
+#   Siegfried-A. Gevatter (siegfried@gevatter.com)
+#   Pedro Assis (pedroh2306@gmail.com)
 #
 # =============================================================================
 #  Copyright (c) 2009. Giuseppe Attardi (attardi@di.unipi.it).
@@ -39,7 +39,7 @@
 Extracts and cleans text from Wikipedia database dump and stores output in a
 number of files of similar size in a given directory.
 Each file contains several documents in Tanl document format:
-	<doc id="" url="" title="">
+    <doc id="" url="" title="">
         ...
         </doc>
 
@@ -182,7 +182,7 @@ def normalizeTitle(title):
           title = ns + ":" + rest.capitalize()
       else:
           # No namespace, just capitalize first letter.
-	  # If the part before the colon is not a known namespace, then we must
+      # If the part before the colon is not a known namespace, then we must
           # not remove the space after the colon (if any), e.g.,
           # "3001: The_Final_Odyssey" != "3001:The_Final_Odyssey".
           # However, to get the canonical page name we must contract multiple
@@ -431,7 +431,7 @@ def clean(text):
             text = text.replace(match.group(), '%s_%d' % (placeholder, index))
             index += 1
 
-    text = text.replace('<<', '«').replace('>>', '»')
+    text = text.replace('<<', 'Â«').replace('>>', 'Â»')
 
     #######################################
 
@@ -443,8 +443,8 @@ def clean(text):
     text = text.replace('\t', ' ')
     text = spaces.sub(' ', text)
     text = dots.sub('...', text)
-    text = re.sub(' (,:\.\)\]»)', r'\1', text)
-    text = re.sub('(\[\(«) ', r'\1', text)
+    text = re.sub(' (,:\.\)\]Â»)', r'\1', text)
+    text = re.sub('(\[\(Â«) ', r'\1', text)
     text = re.sub(r'\n\W+?\n', '\n', text) # lines with only punctuations
     text = text.replace(',,', ',').replace(',.', '.')
     re2 = re.compile(r"__[A-Z]+__")
@@ -583,7 +583,7 @@ class OutputSplitter:
 
 tagRE = re.compile(r'(.*?)<(/?\w+)[^>]*>(?:([^<]*)(<.*?>)?)?')
 
-def process_data(ftype,input, output_sentences, output_structure,
+def process_data(ftype, input, output_sentences, output_structure, incubator,
                  vital_titles=None, vital_tags=None):
     global prefix
     page = []
@@ -605,6 +605,8 @@ def process_data(ftype,input, output_sentences, output_structure,
             id = m.group(3)
         elif tag == 'title':
             title = m.group(3)
+            if(incubator != ''):
+                lang = title.split('/')
         elif tag == 'redirect':
             redirect = True
         elif tag == 'text':
@@ -624,12 +626,20 @@ def process_data(ftype,input, output_sentences, output_structure,
             if (colon < 0 or title[:colon] in acceptedNamespaces) and \
                     not redirect:
                 if (not vital_titles) or (title in vital_titles):
-                    print(id, title)
-                    sys.stdout.flush()
-                    tags = vital_tags[title] if vital_tags else []
-                    WikiDocumentSentences(output_sentences, id, title, tags,
-                                          ''.join(page))
-                    #WikiDocument(output_structure, id, title, ''.join(page))
+                    if((incubator != '') and (lang[1] == incubator) and len(lang) > 2):
+                        print(id, lang[2])
+                        sys.stdout.flush()
+                        tags = vital_tags[title] if vital_tags else []
+                        WikiDocumentSentences(output_sentences, id, lang[2], tags,
+                                              ''.join(page))
+                        #WikiDocument(output_structure, id, title, ''.join(page))
+                    elif(incubator == ''):
+                        print(id, title)
+                        sys.stdout.flush()
+                        tags = vital_tags[title] if vital_tags else []
+                        WikiDocumentSentences(output_sentences, id, title, tags,
+                                              ''.join(page))
+                        #WikiDocument(output_structure, id, title, ''.join(page))
             id = None
             page = []
         elif tag == 'base':
@@ -672,6 +682,7 @@ def get_argparser():
     """Build the argument parser for main."""
     parser = argparse.ArgumentParser(description='WikiExtractor')
     parser.add_argument('--infn', type=str, required=False, help="The location/file of the Wiki Dump. Supports uncompressed, bz2, and gzip.")
+    parser.add_argument('--incubator', type=str, required=False, help="If this is included, WikiExtractor will scramble in Incubator Mode. You should specify language here (e.g enm - Middle English)")
     #parser.add_argument('--vitalfn', type=str, required=False)
     #parser.add_argument('--all-articles',dest='allArticles',action='store_true')
     #parser.add_argument('--structure',dest='keepSections',action='store_true')
@@ -680,6 +691,7 @@ def get_argparser():
     #parser.set_defaults(keepSections=True)
     #parser.set_defaults(allArticles=True)
     parser.set_defaults(compress=False)
+    parser.set_defaults(incubator='')
     parser.set_defaults(infn='')
     return parser
 
@@ -713,6 +725,8 @@ def main():
     output_sentences = OutputSplitter(compress, file_size, output_dir,
                                       segment=True)
     #output_structure = OutputSplitter(compress, file_size, output_dir)
+
+    incubator = args.incubator
     fname = args.infn
     if fname == "":
         parser.print_help()
@@ -724,17 +738,17 @@ def main():
     if 'bzip2' in ftypes:
         print('File detected as being bzip2.')
         f = bz2.BZ2File(fname, mode='r')
-        process_data('bzip2',f, output_sentences, vital_titles, vital_tags)
+        process_data('bzip2',f, output_sentences, vital_titles, incubator, vital_tags)
         output_sentences.close()
         
     elif 'gzip' in ftypes:
         print('File detected as being a gzip.')
         f = gzip.GzipFile(fname, mode='r')
-        process_data('gzip',f, output_sentences, vital_titles, vital_tags)
+        process_data('gzip',f, output_sentences, vital_titles, incubator, vital_tags)
         output_sentences.close() 
     else:
         with open(args.infn) as infile:
-            process_data('xml',infile, output_sentences, vital_titles, vital_tags)
+            process_data('xml',infile, output_sentences, vital_titles, incubator, vital_tags)
         output_sentences.close()
 
     #output_structure.close()
