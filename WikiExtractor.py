@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
+# Incubator module added by Grzegorz Stark for Apertium, in December 2017.
+#
 # And changed even more by Ben Stobaugh for Apertium, in December 2013.
 #
 # Hacked up by Alex Rudnick for use in Guampa, October 2013.
