@@ -566,7 +566,7 @@ class OutputSplitter:
             else:
                 return bz2.BZ2File('wiki.txt.bz2', 'ab')
         else:
-            return open(file_name, 'a')
+            return open(file_name, 'a',encoding="utf8")
 
     def dir_name(self):
         ### split into two kinds of directories:
@@ -749,7 +749,7 @@ def main():
         process_data('gzip',f, output_sentences, vital_titles, incubator, vital_tags)
         output_sentences.close() 
     else:
-        with open(args.infn) as infile:
+        with open(args.infn,encoding="utf8") as infile:
             process_data('xml',infile, output_sentences, vital_titles, incubator, vital_tags)
         output_sentences.close()
 
