@@ -52,12 +52,11 @@ Usage:
 import argparse
 import gc
 import sys
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
 import re
 import bz2
 import os.path
 from html.entities import name2codepoint
-#import fnmatch
 import shutil
 import mimetypes
 import gzip
@@ -70,7 +69,7 @@ import gzip
 ### PARAMS ####################################################################
 
 # This is obtained from the dump itself
-prefix = None
+PREFIX = None
 
 ##
 # Whether to preseve links in output
@@ -86,12 +85,12 @@ keepSections = False
 # Recognize only these namespaces
 # w: Internal links to the Wikipedia
 #
-acceptedNamespaces = set(['w'])
+ACCEPTED_NAMESPACES= set(['w'])
 
 ##
 # Drop these elements from article text
 #
-discardElements = set([
+DISCARD_ELEMENTS = set([
         'gallery', 'timeline', 'noinclude', 'pre',
         'table', 'tr', 'td', 'th', 'caption',
         'form', 'input', 'select', 'option', 'textarea',
@@ -132,7 +131,7 @@ version = '2.5'
 ##    print(footer, file=out)
 
 def WikiDocumentSentences(out, id, title, tags, text):
-    url = get_url(id, prefix)
+    url = get_url(id, PREFIX)
     header = '\n{0}:{1}'.format(title, "|||".join(tags))
     # Separate header from text with a newline.
     text = clean(text)
@@ -176,7 +175,7 @@ def normalizeTitle(title):
       rest = m.group(3)
 
       ns = prefix.capitalize()
-      if ns in acceptedNamespaces:
+      if ns in ACCEPTED_NAMESPACES:
           # If the prefix designates a known namespace, then it might be
           # followed by optional whitespace that should be removed to get
           # the canonical page name
@@ -224,7 +223,7 @@ comment = re.compile(r'<!--.*?-->', re.DOTALL)
 
 # Match elements to ignore
 discard_element_patterns = []
-for tag in discardElements:
+for tag in DISCARD_ELEMENTS:
     pattern = re.compile(r'<\s*%s\b[^>]*>.*?<\s*/\s*%s>' % (tag, tag), re.DOTALL | re.IGNORECASE)
     discard_element_patterns.append(pattern)
 
@@ -353,7 +352,7 @@ def make_anchor_tag(match):
     global keepLinks
     link = match.group(1)
     colon = link.find(':')
-    if colon > 0 and link[:colon] not in acceptedNamespaces:
+    if colon > 0 and link[:colon] not in ACCEPTED_NAMESPACES:
         return ''
     trail = match.group(3)
     anchor = match.group(2)
@@ -587,7 +586,7 @@ tagRE = re.compile(r'(.*?)<(/?\w+)[^>]*>(?:([^<]*)(<.*?>)?)?')
 
 def process_data(ftype, input, output_sentences, output_structure, incubator,
                  vital_titles=None, vital_tags=None):
-    global prefix
+    global PREFIX
     page = []
     id = None
     inText = False
@@ -625,7 +624,7 @@ def process_data(ftype, input, output_sentences, output_structure, incubator,
             page.append(line)
         elif tag == '/page':
             colon = title.find(':')
-            if (colon < 0 or title[:colon] in acceptedNamespaces) and \
+            if (colon < 0 or title[:colon] in ACCEPTED_NAMESPACES) and \
                     not redirect:
                 if (not vital_titles) or (title in vital_titles):
                     if((incubator != '') and (lang[1] == incubator) and len(lang) > 2):
@@ -648,7 +647,7 @@ def process_data(ftype, input, output_sentences, output_structure, incubator,
             # discover prefix from the xml dump file
             # /mediawiki/siteinfo/base
             base = m.group(3)
-            prefix = base[:base.rfind("/")]
+            PREFIX = base[:base.rfind("/")]
 
 ##def load_vital_titles(vitalfn):
 ##    """Given the filename for the vital titles list (one title per line, with
@@ -698,7 +697,7 @@ def get_argparser():
     return parser
 
 def main():
-    global keepLinks, keepSections, prefix, acceptedNamespaces
+    global keepLinks, keepSections, PREFIX, ACCEPTED_NAMESPACES
     script_name = os.path.basename(sys.argv[0])
 
     parser = get_argparser()
